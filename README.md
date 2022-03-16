@@ -14,7 +14,7 @@ Cgo enables the creation of Go packages that call C code.
 
 The cgo tool is enabled by default for native builds on systems where it is expected to work. It is disabled by default when cross-compiling. You can control this by setting the `CGO_ENABLED` environment variable when running the go tool: set it to 1 to enable the use of cgo, and to 0 to disable it. The go tool will set the build constraint "cgo" if cgo is enabled. The special import "C" implies the "cgo" build constraint, as though the file also said "// +build cgo". Therefore, if cgo is disabled, files that import "C" will not be built by the go tool.
 
-When cross-compiling, you must specify a C cross-compiler for cgo to use. You can do this by setting the generic `CC_FOR_TARGET` or the more specific `CC_FOR_${GOOS}_${GOARCH}` (for example, `CC_FOR_linux_arm`) environment variable when building the toolchain using make.bash, or you can set the `CC` environment variable any time you run the go tool.
+When **cross-compiling**, you **must specify a C cross-compiler for cgo** to use. You can do this by setting the generic `CC_FOR_TARGET` or the more specific `CC_FOR_${GOOS}_${GOARCH}` (for example, `CC_FOR_linux_arm`) environment variable when building the toolchain using make.bash, or you can set the `CC` environment variable any time you run the go tool.
 
 
 ## Go Packages
@@ -55,7 +55,7 @@ When `cgo` is available, and the required routines are implemented in `libc` for
 
 ## Static builds
 
-Sometimes different versions of libc, net libraries, missing required system files would cause some issues, if the static build is not handled properly.
+To build statically linked binaries with Go code, make sure to use following flags:
 
 * **`-a`** forces a rebuild of packages that are already up-to-date
 * **`ldflags -w`** disables **DWARF debugging information** making the file be smaller
@@ -63,10 +63,34 @@ Sometimes different versions of libc, net libraries, missing required system fil
 ```golang
 CGO_ENABLED=0 go build \
     -a \
-    -ldflags '-w' \
+    -tags timetzdata \
+    -ldflags '-w -extldflags "-static"' \
     -o app main.go
 ```
 
-```golang
-go build -a -tags timetzdata -ldflags '-w -extldflags "-static"' -o app *.go
+Run the file command to find out, if a program is statically compiled
+
+```bash
+file app | tr , '\n'
+
+app: ELF 64-bit LSB executable
+ x86-64
+ version 1 (SYSV)
+ statically linked
+ Go BuildID=Og-Vc_W9EZISm4BrhFOs/xgQ-nUF3QuCxjkEBEJdp/Adnqd4xfp-itlsxMUj33/HinnWtTGHTPB16OFm_uk
+ not stripped
+```
+
+Or use the ldd command, if the binary matches the system's architecture
+
+```bash
+ldd app
+        not a dynamic executable
+```
+
+To verify that the binary runs without external dependencies, use the chroot command:
+
+```bash
+sudo TZ=Brazil/West GODEBUG=netdns=go chroot . "./app"
+hello world
 ```

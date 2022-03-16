@@ -1,43 +1,56 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"os/user"
 	"time"
 )
 
 func main() {
 
+	fmt.Println("hello world")
+
+	//
+	// User
+	//
 	usr, err := user.Current()
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println(usr.Name)
-	fmt.Println(usr.Uid)
-	fmt.Println(usr.Username)
+	fmt.Printf("User: %s\n", usr.Name)
+	fmt.Printf("UID: %s\n", usr.Uid)
 
-	now := time.Now()
-	fmt.Println(now)
-	location := now.Location()
-	fmt.Println(location.String())
+	//
+	// Time
+	//
+	now1 := time.Now()
+	fmt.Println(now1)
+	//
+	tz := os.Getenv("TZ")
+	time.Local, _ = time.LoadLocation(tz)
+	now2 := time.Now()
+	fmt.Println(now2)
 
-	var brazil, _ = time.LoadLocation("Brazil/West")
-	// time.Now().In(brazil).Format("2006-01-02 15:04:05")
-	fmt.Println(time.Now().In(brazil))
-
-	resp, err := http.Get("https://icanhazip.com/")
+	//
+	// Net
+	//
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: false},
+	}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Get("https://icanhazip.com")
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	fmt.Printf("%s", body)
 
 }

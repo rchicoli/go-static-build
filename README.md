@@ -58,13 +58,14 @@ When `cgo` is available, and the required routines are implemented in `libc` for
 To build statically linked binaries with Go code, make sure to use following flags:
 
 * **`-a`** forces a rebuild of packages that are already up-to-date
-* **`ldflags -w`** disables **DWARF debugging information** making the file be smaller
+* **`-s`** disables symbol table
+* **`ldflags -w`** disables **DWARF debugging information**
 
 ```golang
 CGO_ENABLED=0 go build \
     -a \
     -tags timetzdata \
-    -ldflags '-w -extldflags "-static"' \
+    -ldflags '-w -s -extldflags "-static"' \
     -o app main.go
 ```
 
